@@ -40,6 +40,8 @@ def send_friendly(thread_pool, times):
 
 def send_hostile(thread_pool, times):
     logger.log("Started attacking")
+    payload = {'source': 'A', 'destination': 'B', 'type': 'AttackInit'}
+    thread_pool.submit(send_request, payload)
     for elem in range(times):
         payloads = [
             {'source': 'A', 'destination': 'B', 'type': 'X'},
