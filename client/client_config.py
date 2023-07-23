@@ -1,4 +1,8 @@
 HOSTNAME = "localhost"
 PORT = 5000
 ENDPOINT = "send-message"
-ATTACK_DELAY=7
+
+# orchestrator
+TIME_SEC = 50
+PAYLOAD_AMOUNT = 30
+ATTACKER_PAYLOAD_AMOUNT = 60

@@ -34,7 +34,6 @@ class DataProcessing:
         sample_size = math.ceil((end_index - start_index + 1) / resolution)
         frequencies = defaultdict(int)
 
-        # Count the frequency of each payload type and source-destination pair within the specified range and resolution
         for i in range(start_index, end_index + 1, resolution):
             if i < len(self.payloads):
                 payload = self.payloads[i]
@@ -44,20 +43,11 @@ class DataProcessing:
                 key = (payload_type, source, destination)
                 frequencies[key] += 1
 
-        # Calculate the probability of each payload type and source-destination pair
         probabilities = [count / sample_size for count in frequencies.values()]
-
-        # Calculate the entropy
         entropy = -sum(p * math.log2(p) for p in probabilities if p != 0)
-
-        # Normalize the entropy according to the sample size
         normalized_entropy = entropy / math.log2(len(frequencies)) if len(frequencies) > 1 else 0
-
         l2_normalized_entropy = normalized_entropy * math.sqrt(len(frequencies))
-
         return l2_normalized_entropy
-
-        # return normalized_entropy
 
     def calculate_entropy_over_period(self, start_index, max_end_index, resolution, parameter='time'):
         max_end_index = min(max_end_index, self.index)
@@ -67,7 +57,6 @@ class DataProcessing:
         measurements = []
         indices = []
 
-        # Iterate over element in resolution sized intervals
         for end_index in end_indices:
             entropy = self.calculate_entropy(start_index, end_index, resolution)
             entropy_values.append(entropy)
@@ -85,11 +74,7 @@ class DataProcessing:
             pass
 
     def plot_entropy_over_time(self, start_index, max_end_index, resolution):
-
         (timestamps, entropy_values, indices) = self.calculate_entropy_over_period(start_index, max_end_index, resolution, 'time')
-
-        # Plot the entropy values over time
-
         plt.plot(timestamps, entropy_values)
         plt.xlabel('Time')
         plt.ylabel('Entropy')
@@ -99,9 +84,6 @@ class DataProcessing:
     def plot_entropy_over_indices(self, start_index, max_end_index, resolution):
         (timestamps, entropy_values, indices) = self.calculate_entropy_over_period(start_index, max_end_index,
                                                                                    resolution, 'index')
-
-        # Plot the entropy values over time
-
         plt.plot(indices, entropy_values)
         plt.xlabel('Indices')
         plt.ylabel('Entropy')

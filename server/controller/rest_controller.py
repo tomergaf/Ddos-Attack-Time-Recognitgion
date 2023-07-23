@@ -58,32 +58,23 @@ def find_spike():
 @app.route('/send-message', methods=['POST'])
 def register_message():
     """
-    this gets the message, parses it, and stores it in the data processing unit
+    this method gets the message, parses it, and stores it in the data processing unit
 
     """
-    '''
-    temp - will parse and print fields
-    '''
-
     data = []
     payload = request.get_json()
     source = payload.get('source')
     destination = payload.get('destination')
     data_type = payload.get('type')
-
     processing_unit.register_payload(source, destination, data_type)
-
     logger.log(f"Payload registered - Source: {source}, Destination: {destination}, Type: {data_type}",logging.DEBUG)
-
-    #DELETEME - for control and visibility
     data.append({
         'source': source,
         'destination': destination,
         'type': data_type
     })
-    return 'Data stored successfully' + "\n" + print_data(data)
 
-#TODO - DELETEME
+# for logging
 def print_data(data):
     result = ''
     for item in data:

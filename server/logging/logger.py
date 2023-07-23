@@ -8,7 +8,6 @@ class Logger:
         self.logger.setLevel(logging.DEBUG)
 
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
         log_file = "logs.txt"
 
         if log_file:
@@ -24,7 +23,6 @@ class Logger:
         stream_handler.setLevel(logging.DEBUG)
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
-
         self.log_stream = log_stream
 
     def log(self, message, verbosity=logging.INFO):
