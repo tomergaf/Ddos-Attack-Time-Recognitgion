@@ -1,98 +1,77 @@
+import math
+import random
+import string
+import time
+from concurrent.futures import ThreadPoolExecutor
 import requests
-import json
 from client.client_config import *
 from server.logging import logger as log
-from concurrent.futures import ThreadPoolExecutor, as_completed, wait
-import time
 
 logger = log.logger
 
+ALPHABET = string.ascii_uppercase
+
 def send_request(payload):
-    url = 'http://{}:{}/{}'.format(HOSTNAME, PORT, ENDPOINT)
+    url = f'http://{HOSTNAME}:{PORT}/{ENDPOINT}'
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
-        #print(f"Request sent successfully with payload: {payload}")
         return response
     except requests.exceptions.RequestException as e:
         print(f"Error sending request with payload: {payload}")
         print(e)
 
-def send_friendly(thread_pool, times):
-    for elem in range(times):
-        payloads = [
-            {'source': 'A', 'destination': 'B', 'type': 'X'},
-            {'source': 'C', 'destination': 'D', 'type': 'Y'},
-            {'source': 'E', 'destination': 'F', 'type': 'Z'},
-            {'source': 'G', 'destination': 'H', 'type': 'X'},
-            {'source': 'I', 'destination': 'J', 'type': 'Y'}
-        ]
 
-        futures = []
-        for payload in payloads:
-            future = thread_pool.submit(send_request, payload)
-            futures.append(future)
-        # Wait for all tasks to complete
-    # thread_pool.shutdown(wait=True)
-    logger.log("Friendly done")
-    return futures
-
-def send_hostile(thread_pool, times):
-    logger.log("Started attacking")
-    payload = {'source': 'A', 'destination': 'B', 'type': 'AttackInit'}
-    thread_pool.submit(send_request, payload)
-    for elem in range(times):
-        payloads = [
-            {'source': 'A', 'destination': 'B', 'type': 'X'},
-            {'source': 'C', 'destination': 'B', 'type': 'Y'},
-            {'source': 'E', 'destination': 'B', 'type': 'Z'},
-            {'source': 'G', 'destination': 'B', 'type': 'X'},
-            {'source': 'I', 'destination': 'B', 'type': 'Y'}
-        ]
-
-        futures = []
-        for payload in payloads:
-            future = thread_pool.submit(send_request, payload)
-            futures.append(future)
-
-        # Wait for all tasks to complete
-    thread_pool.shutdown(wait=True)
-    logger.log("Done attacking")
-    return futures
-
-def main():
-    # Create a thread pool with 5 threads
-    futures = []
+def run():
     logger.log("Initiating senders")
-    thread_pool_friendly = ThreadPoolExecutor(max_workers=5)
-    thread_pool_hostile = ThreadPoolExecutor(max_workers=5)
+    thread_pool = ThreadPoolExecutor(max_workers=5)
+    payloads_arr = []
+    attack_payload_arr = []
+    results = []
 
-    friendly_futures = send_friendly(thread_pool_friendly, 10)
-    time.sleep(ATTACK_DELAY)
-    hostile_futures = send_hostile(thread_pool_hostile, 4)
-    friendly_futures = send_friendly(thread_pool_friendly, 10)
+     # init payloads
+    for _ in range(PAYLOAD_AMOUNT):
+        payloads_arr.append(generate_random_payload())
 
-    # Combine all the futures
-    all_futures = friendly_futures + hostile_futures
+    destination = random.choice(ALPHABET)
+    for _ in range(ATTACKER_PAYLOAD_AMOUNT):
+        attack_payload_arr.append(generate_attacker_payload(destination))
 
-    wait(all_futures)
+    _run_friendly(payloads_arr, thread_pool, results, TIME_SEC)
+    _run_attack(attack_payload_arr, thread_pool, results, destination)
+    _run_friendly(payloads_arr, thread_pool, results, TIME_SEC*1.5)
 
-    # Wait for all tasks to complete and process the results
-    for future in as_completed(all_futures):
-        result = future.result()
-        # Process the result as needed
-        logger.log(result.content)
+    list(results)
+    thread_pool.shutdown(wait=True)
 
+def _run_friendly(payloads_arr, thread_pool, results, time_to_run):
+    logger.log("start friendly")
+    for i in range(0, math.ceil(time_to_run)):
+        results += thread_pool.map(send_request, payloads_arr)
+        time.sleep(1)
+    logger.log("finish friendly")
 
-    # futures.append(send_friendly(thread_pool_friendly, 5))
-    # time.sleep(ATTACK_DELAY);
-    # futures.append(send_hostile(thread_pool_hostile, 3))
+def _run_attack(attack_payload_arr, thread_pool, results, destination):
+    logger.log("start attack")
+    results += thread_pool.map(send_request, [{'source': random.choice(ALPHABET), 'destination': destination, 'type': 'AttackInit'}])
+    results += thread_pool.map(send_request, attack_payload_arr)
+    results += thread_pool.map(send_request, [{'source': random.choice(ALPHABET), 'destination': destination, 'type': 'AttackFinished'}])
 
-    # Print the results
-    # for future in futures:
-    #     result = future.result()
-    #     print(result.content)
+def generate_random_payload():
+    return {
+        'source': random.choice(ALPHABET),
+        'destination': random.choice(ALPHABET),
+        'type': random.choice(ALPHABET)
+    }
+
+def generate_attacker_payload(destination: str):
+    return {
+        'source': random.choice(ALPHABET),
+        'destination': destination,
+        'type': destination
+    }
+
 
 if __name__ == '__main__':
-    main()
+    run()
